@@ -8,71 +8,124 @@ languages and SQL databases.  Some of the goals are:
 * Compare the performance of different languages when connecting to a database,
 * Have a rough comparison on simple SQL queries on different databases.
 
-# Languages
+## Languages
 
 * [Java Benchmark](https://github.com/stcarrez/sql-benchmark/tree/master/java)
 * [Ada Benchmark](https://github.com/stcarrez/sql-benchmark/tree/master/ado)
 * [Python Benchmark](https://github.com/stcarrez/sql-benchmark/tree/master/python)
 
-# Databases
+## Databases
 
 Three SQL databases are supported:
 
-* SQLite,
-* MySQL/MariaDB,
+* SQLite
+* MySQL/MariaDB
 * PostgreSQL
+* SAP ASE (Sybase)
 
 Before running the SQL benchmark of MySQL/MariaDB and PostgreSQL, you must create the
 `sqlbench` database and give access to the `sqlbench` user.
 
 The SQLite database is created automatically.
 
-## MySQL/MariaDB setup
+### MySQL/MariaDB setup
 
 1. Create the 'sqlbench' database in MySQL/MariaDB
 
-```
+```bash
 mysql -u root
 mysql> create database sqlbench;
 ```
 
 2. Create the 'sqlbench' user:
-```
+
+```bash
 mysql> create user 'sqlbench'@'localhost' identified by 'sqlbench';
 ```
 
 3. Give the access rights:
-```
+
+```bash
 mysql> grant select, insert, update, delete,
        create, drop, create temporary tables, execute,
        show view on sqlbench.* to sqlbench@'localhost';
 mysql> flush privileges;
 ```
 
-## Postgresql setup
+### Postgresql setup
 
 To create manually the database, you can proceed to the following steps:
 
 1. Create the 'sqlbench' user and configure the password
-(enter 'sqlbench' for the password or update the configuration sqlbench.properties file):
+> (enter 'sqlbench' for the password or update the configuration sqlbench.properties file):
 
-```
+```bash
 sudo -u postgres createuser sqlbench --pwprompt
 ```
 
 2. Create the 'sqlbench' database in Postgresql
 
-```
+```bash
 sudo -u postgres createdb -O sqlbench sqlbench
 ```
 
-# Running
+### SAP ASE (Sybase)
+
+To create manually the database, you can proceed to the following steps:
+
+1. Create the 'sqlbench' user and configure password
+
+> (enter 'sqlbench' for the password or update the configuration sqlbench.properties file):
+
+```bash
+cat << EOF | isql -U sa -P myPassword -S MYSYBASE -D master
+create login 'sqlbench' with password 'sqlbench'
+go
+EOF
+```
+
+2. Create the 'sqlbench' database in SAP ASE (Sybase)
+
+```bash
+cat << EOF | isql -U sa -P myPassword -S MYSYBASE -D master
+use sqlbench
+go
+sp_adduser 'sqlbench', 'sqlbench', null
+go
+grant create default to sqlbench
+go
+grant create table to sqlbench
+go
+grant create view to sqlbench
+go
+grant create rule to sqlbench
+go
+grant create function to sqlbench
+go
+grant create procedure to sqlbench
+go
+commit
+go
+EOF
+```
+
+## Running
 
 The script `run-all.sh` can be used to run all the benchmark and produce the results.
 Before running it, make sure you have built the Ada and Java benchmark programs as
 well as the Ada aggregator tool.  To build, run the following commands.
 
-```
+```bash
+sudo apt-get install freetds-dev freetds-bin unixodbc-dev tdsodbc
+sudo dpkg-reconfigure tdsodbc
+
+cat <<EOF > /etc/odbcinst.ini 
+[FreeTDS]
+Description=FreeTDS Driver
+Driver=/usr/lib/odbc/libtdsodbc.so
+Setup=/usr/lib/odbc/libtdsS.so
+EOF
+
 cd ado
 ./configure
 make
@@ -86,11 +139,11 @@ cd ..
 
 Then, simply run the script:
 
-```
+```bash
 ./run-all.sh
 ```
 
-# Results
+## Results
 
 ![Time](https://github.com/stcarrez/sql-benchmark/wiki/images/time.png)
 ![Memory](https://github.com/stcarrez/sql-benchmark/wiki/images/memory.png)
@@ -99,7 +152,7 @@ Then, simply run the script:
 ![PostgreSQL](https://github.com/stcarrez/sql-benchmark/wiki/images/postgresql.png)
 
 
-## CONNECT; SELECT 1; CLOSE
+### CONNECT; SELECT 1; CLOSE
 
 |                       | sqlite        | mysql         | postgresql    |
 |-----------------------|---------------|---------------|---------------|
@@ -107,7 +160,7 @@ Then, simply run the script:
 | Java                  |  187.7 us     |  895.8 us     |  10.80 ms     |
 | Python                |  42.00 us     |  398.5 us     |  6.071 ms     |
 
-## DO 1
+### DO 1
 
 |                       | sqlite        | mysql         | postgresql    |
 |-----------------------|---------------|---------------|---------------|
@@ -115,7 +168,7 @@ Then, simply run the script:
 | Java                  |               |  53.72 us     |               |
 | Python                |               |  33.03 us     |               |
 
-## DROP table; CREATE table
+### DROP table; CREATE table
 
 |                       | sqlite        | mysql         | postgresql    |
 |-----------------------|---------------|---------------|---------------|
@@ -123,7 +176,7 @@ Then, simply run the script:
 | Java                  |  1.698 ms     |  504.9 ms     |  45.03 ms     |
 | Python                |  122.5 ms     |  498.6 ms     |  41.24 ms     |
 
-## INSERT INTO table
+### INSERT INTO table
 
 |                       | sqlite        | mysql         | postgresql    |
 |-----------------------|---------------|---------------|---------------|
@@ -131,7 +184,7 @@ Then, simply run the script:
 | Java                  |  96.20 us     |  241.4 us     |  119.3 us     |
 | Python                |  3.684 us     |  290.7 us     |  119.1 us     |
 
-## SELECT * FROM table LIMIT 1
+### SELECT * FROM table LIMIT 1
 
 |                       | sqlite        | mysql         | postgresql    |
 |-----------------------|---------------|---------------|---------------|
@@ -139,7 +192,7 @@ Then, simply run the script:
 | Java                  |  5.096 us     |  97.38 us     |  105.6 us     |
 | Python                |  3.457 us     |  47.31 us     |  148.7 us     |
 
-## SELECT * FROM table LIMIT 10
+### SELECT * FROM table LIMIT 10
 
 |                       | sqlite        | mysql         | postgresql    |
 |-----------------------|---------------|---------------|---------------|
@@ -147,7 +200,7 @@ Then, simply run the script:
 | Java                  |  5.115 us     |  101.7 us     |  92.56 us     |
 | Python                |  8.766 us     |  51.76 us     |  128.0 us     |
 
-## SELECT * FROM table LIMIT 100
+### SELECT * FROM table LIMIT 100
 
 |                       | sqlite        | mysql         | postgresql    |
 |-----------------------|---------------|---------------|---------------|
@@ -155,7 +208,7 @@ Then, simply run the script:
 | Java                  |  15.53 us     |  174.5 us     |  223.8 us     |
 | Python                |  60.43 us     |  102.0 us     |  236.6 us     |
 
-## SELECT * FROM table LIMIT 500
+### SELECT * FROM table LIMIT 500
 
 |                       | sqlite        | mysql         | postgresql    |
 |-----------------------|---------------|---------------|---------------|
@@ -163,7 +216,7 @@ Then, simply run the script:
 | Java                  |  62.12 us     |  462.2 us     |  616.2 us     |
 | Python                |  297.8 us     |  300.2 us     |  462.2 us     |
 
-## SELECT * FROM table LIMIT 1000
+### SELECT * FROM table LIMIT 1000
 
 |                       | sqlite        | mysql         | postgresql    |
 |-----------------------|---------------|---------------|---------------|
@@ -171,7 +224,7 @@ Then, simply run the script:
 | Java                  |  121.8 us     |  728.2 us     |  871.6 us     |
 | Python                |  605.6 us     |  551.6 us     |  730.3 us     |
 
-## SELECT 1
+### SELECT 1
 
 |                       | sqlite        | mysql         | postgresql    |
 |-----------------------|---------------|---------------|---------------|
